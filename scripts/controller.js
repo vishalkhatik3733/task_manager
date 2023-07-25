@@ -1,30 +1,41 @@
 //DOM
-import taskOperations from "./models/task_operations.js";
+import { taskOperations } from "./models/task_operations.js";
 window.addEventListener('load', init);
 function init() {
     bindEvents();
     showCounts();
+    focus("id");
 }
 function bindEvents() {
-    document.querySelector('#add').addEventListener('click', addTask);
+    document.querySelector("#delete").addEventListener("click", deleteTask);
+    document.querySelector("#add").addEventListener("click", addTask);
+}
+
+function deleteTask() {
+    let tasks = taskOperations.deletedMarked();
+    showCounts();
+    printTasks(tasks);
+    console.log("deleted");
 }
 
 function toggleDelete() {
+    console.log("Toggle...", this.getAttribute("task-id"));
     const icon = this;
+    const id = icon.getAttribute("task-id");
     const tr = icon.parentNode.parentNode;
     tr.classList.toggle("alert-danger");
-    console.log("Toggle...", this.getAttribute("task-id"));
+    taskOperations.mark(id);
+    showCounts();
 }
 
 function edit() {
     console.log("Edit...");
 }
 
-
 function showCounts() {
     document.querySelector("#total").innerText = taskOperations.tasks.length;
-    document.querySelector("#marktotal").innerText = 0;
-    document.querySelector("#unmarktotal").innerText = 0;
+    document.querySelector("#marktotal").innerText = taskOperations.countMarked();
+    document.querySelector("#unmarktotal").innerText = taskOperations.countUnmarked();
 }
 
 function createIcon(className, fn, id) {
@@ -47,8 +58,17 @@ function addTask() {
     const task = taskOperations.add(id, name, desc, date, url);
     printTask(task);
     showCounts();
+    clearAll();
+    focus("id");  
 
     // Store in object and then object goes in Array
+}
+
+function printTasks(tasks) {
+    const tbody = document.querySelector("#tasks");
+    tbody.innerHTML = "";
+   // tasks.forEach((task) => printTask(task));
+   tasks.forEach(printTask);
 }
 
 function printTask(task) {
@@ -58,13 +78,23 @@ function printTask(task) {
     // Object Traverse
     let cellIndex = 0;
     for (let key in task) {
+        if (key == "isMarked" || typeof task[key] === "function") {
+            continue;
+        }
         let value = task[key];
         let td = tr.insertCell(cellIndex);
         td.innerText = value;
         cellIndex++;
     }
 
-    let td = tr.insertCell(cellIndex); 
-    td.appendChild(createIcon("edit", edit)); 
-    td.appendChild(createIcon("trash", toggleDelete)); 
+    let td = tr.insertCell(cellIndex);
+    td.appendChild(createIcon("edit", edit, id));
+    td.appendChild(createIcon("trash", toggleDelete, id));
 } 
+
+const clearAll = () =>
+   document
+   .querySelectorAll(".form-control")
+    .forEach((txtBox) => (txtBox.value = ""));
+
+const focus = (fieldId) => document.querySelector("#" + fieldId).focus();
